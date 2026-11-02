@@ -109,8 +109,9 @@ def changelogSection = providers.provider {
     "## [${mod_version}]\n\n${body}"
 }
 
-// Upload to CurseForge + GitHub release, run by .github/workflows/release.yml on a version tag. Without
-// CURSEFORGE_API_KEY (e.g. on a dev machine) it's always a dry run: the upload is only written to build/publishMods.
+// GitHub release only - this mod is deliberately not on CurseForge (a narrow client-side tweak for one pack).
+// Run by .github/workflows/release.yml on a version tag. Without GITHUB_TOKEN (e.g. on a dev machine) it's
+// always a dry run: the release is only written to build/publishMods.
 publishMods {
     file = jar.archiveFile
     changelog = changelogSection
@@ -118,18 +119,8 @@ publishMods {
     type = STABLE
     displayName = "${mod_id}-${mod_version}"
     modLoaders.add('neoforge')
-    dryRun = providers.environmentVariable('CURSEFORGE_API_KEY').getOrNull() == null
+    dryRun = providers.environmentVariable('GITHUB_TOKEN').getOrNull() == null
 
-    curseforge {
-        // Empty until the CurseForge project exists - release.yml refuses to publish while it is.
-        projectId = providers.gradleProperty('curseforge_project_id').map { it.trim() }
-        accessToken = providers.environmentVariable('CURSEFORGE_API_KEY')
-        minecraftVersions.add(minecraft_version)
-        // Client-side mod: it targets the client's event-dispatch overhead only.
-        clientRequired = true
-        serverRequired = false
-        requires('zeta')
-    }
     github {
         accessToken = providers.environmentVariable('GITHUB_TOKEN')
         repository = project.github_repository
