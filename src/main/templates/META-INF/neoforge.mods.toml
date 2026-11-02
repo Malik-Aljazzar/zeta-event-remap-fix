@@ -1,0 +1,51 @@
+# NeoForge mod metadata for Zeta Forge Event Remap Perf Fix
+
+modLoader="javafml" #mandatory
+loaderVersion="${loader_version_range}" #mandatory
+license="${mod_license}"
+
+[[mods]] #mandatory
+modId="${mod_id}" #mandatory
+version="${mod_version}" #mandatory
+displayName="${mod_name}" #mandatory
+
+description='''
+Client-side-only perf tweak for Zeta's (Quark and other VazkiiMods mods' shared library)
+Forge-style event compatibility layer.
+
+Root cause (verified against Zeta 1.1-40's real bytecode via javap, see
+specification/SPEC.md): org.violetmoon.zetaimplforge.event.ForgeEventsRemapper wraps every
+NeoForge event in a Forge-style wrapper object for mods using Zeta's old Forge-event API.
+The expensive part - finding the right wrapper class/constructor - is already a one-time
+cost cached at mod-init registration (zetaToForgeMap), confirmed via bytecode, NOT a missing
+cache bug. What remains is the findForgeWrapper lambda's per-event Constructor.newInstance
+call - the actual wrapper object construction, needed fresh per event by design. This mod
+replaces that classic reflection call with a cached java.lang.invoke.MethodHandle for the
+same constructor, avoiding some of Constructor.newInstance's own per-call overhead (access
+check, InvocationTargetException wrapping). Expected gain is modest - this is not a "missing
+cache" bug like some other compat-layer fixes, just a narrower reflection-call optimization.
+'''
+
+[[mixins]]
+config="${mod_id}.mixins.json"
+
+[[dependencies.${mod_id}]]
+    modId="neoforge"
+    type="required"
+    versionRange="[${neo_version},)"
+    ordering="NONE"
+    side="CLIENT"
+
+[[dependencies.${mod_id}]]
+    modId="zeta"
+    type="required"
+    versionRange="[${zeta_version},)"
+    ordering="AFTER"
+    side="CLIENT"
+
+[[dependencies.${mod_id}]]
+    modId="minecraft"
+    type="required"
+    versionRange="${minecraft_version_range}"
+    ordering="NONE"
+    side="CLIENT"
